@@ -60,6 +60,7 @@ def make_layers(encoder_size, decoder_size, batch_norm=True):
             encoder['conv' + str(order)] = nn.Conv2d(input_channels, v, encoder_kernel_size[i],
                                                      stride=stride_size, padding=padding_size, bias=True
                                                      )
+            #BatchNorm可以去掉试试 减少参数！！！！！！！！！！！！！！！！！！！！
             encoder['bt' + str(order)] = nn.BatchNorm2d(v)
             encoder['Sigmoid' + str(order)] = nn.Sigmoid()
             input_channels = v
@@ -141,14 +142,15 @@ class Trainer:
         self.model.train()
 
     def train(self):
+        print("Begin.")
         total_time = 0
-        t0 = time.time()
         for i in range(self.epoch):
+            t0 = time.time()
             loss_train = self.train_batch()
             # print('Epoch :', i, ';train_loss:%.4f' % loss_train.data)
-        t1 = time.time()
-        total_time = total_time + (t1 - t0)
-        print("Training time:", float(total_time))
+            # t1 = time.time()
+            # total_time = (t1 - t0)
+            # print("Training time:", float(total_time))
         # print("Finished fine tuning.")
 
     def train_batch(self):
@@ -172,32 +174,26 @@ def low_rank(normal_data, learn_ratio, cp_rank, if_use=False):
     optimizer = torch.optim.Adam(low_rank_net.parameters(), lr=learn_ratio)
     if not if_use:
         # 先训练一个模型
-        first_epoch = 20000
+        # first_epoch = 20000
+        # t0 = time.time()
+        # #开始训练
+        # trainer = Trainer(input_data, low_rank_net, optimizer, first_epoch)
+        #
+        # trainer.train()
+        #
+        # t1 = time.time()
+        # total_time = (t1 - t0)
+        # print("Training once model time:", float(total_time))
+        # torch.save(low_rank_net, "basic_model")
+        # print("Finished basic model.")
+        #
+        # output = low_rank_net(input_data)
+        #
+        # return output
 
-        trainer = Trainer(input_data, low_rank_net, optimizer, first_epoch)
-
-        trainer.train()
-
-        torch.save(low_rank_net, "basic_model")
-        print("Finished basic model.")
-
-        output = low_rank_net(input_data)
-
-
-
-
-
-
-
-        return output
-
-
-
-
-
-
-
-        # # 将上述模型进行分解
+        #
+        # low_rank_net = torch.load("basic_model").cuda()
+        # # # 将上述模型进行分解
         # low_rank_net.eval()
         # low_rank_net.cpu()
         # length_encoder = len(low_rank_net.encoder._modules.keys())
@@ -243,12 +239,38 @@ def low_rank(normal_data, learn_ratio, cp_rank, if_use=False):
         # trainer = Trainer(input_data, model_decompose, optimizer_decompose, fine_tune_epoch)
         #
         # trainer.train()
-        # torch.save(model_decompose, 'basic_model')
+        # torch.save(model_decompose, 'basic_model_decompose_fined')
         # print("Finished fine tuning.")
         # output = model_decompose(input_data)
         # return output
+
+
+    #固定模型
+        # t0 = time.time()
+        # low_rank_net = torch.load("basic_model").cpu()
+        # low_rank_net.eval()
+        # torch.set_num_threads(1)
+        # input_data = input_data.cpu()
+        # output = low_rank_net(input_data)
+        # t1 = time.time()
+        # total_time = (t1 - t0)
+        # print("Once_time.", total_time)
+        # return output
+        #
+        t0 = time.time()
+        low_rank_net = torch.load("basic_model_decompose_fined").cpu()
+        low_rank_net.eval()
+        torch.set_num_threads(1)
+        input_data = input_data.cpu()
+        output = low_rank_net(input_data)
+        t1 = time.time()
+        total_time = (t1 - t0)
+        print("Once_time.", total_time)
+        return output
+
     else:
-        decompose = torch.load("basic_model").cuda()
+        decompose = torch.load("basic_model").cpu()
+
         output = decompose(input_data)
         return output
 
@@ -281,3 +303,4 @@ if __name__ == '__main__':
     # print(output)
     # # ------------------------------------------------保存模型--------------------------------------------------------------
     # torch.save(net, 'autoencoder')
+
